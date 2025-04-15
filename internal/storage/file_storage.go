@@ -2,7 +2,6 @@ package storage
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/google/uuid"
 	"notes-api/internal/models"
 	"os"
@@ -64,7 +63,7 @@ func (fs *FileStorage) GetByID(id string) (*models.Note, error) {
 		}
 	}
 
-	return nil, errors.New("note not found")
+	return nil, ErrNoteNotFound
 
 }
 
@@ -103,7 +102,7 @@ func (fs *FileStorage) Update(id string, updatedNote models.Note) error {
 		}
 	}
 
-	return errors.New("note not found")
+	return ErrNoteNotFound
 }
 
 func (fs *FileStorage) Delete(id string) error {
@@ -122,7 +121,7 @@ func (fs *FileStorage) Delete(id string) error {
 		}
 	}
 
-	return errors.New("note not found")
+	return ErrNoteNotFound
 }
 
 func GenerateID() string {
