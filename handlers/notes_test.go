@@ -2,6 +2,7 @@ package handlers
 
 import (
 	// "notes-api/internal/storage"
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -69,7 +70,7 @@ func TestGetAllNotes(t *testing.T) {
 	mockStorage.AssertExpectations(t)
 }
 
-func TestGetByID(t *testing.T) {
+func TestGetNoteByID(t *testing.T) {
 	mockStorage := new(StorageMock)
 	expectedNote := &models.Note{
 		ID:        "00001",
@@ -97,4 +98,30 @@ func TestGetByID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, *expectedNote, response)
 	mockStorage.AssertExpectations(t)
+}
+
+func TestCreateNote(t *testing.T) {
+	MockStorage := new(StorageMock)
+	newNote := models.Note{
+		ID:        "00002",
+		Title:     "Note title",
+		Content:   "Note content",
+		CreatedAt: time.Date(2025, time.April, 23, 12, 0, 0, 0, time.UTC),
+	}
+	MockStorage.On("Create", mock.Anything).Return(nil)
+
+	h := NewNotesHandler(MockStorage)
+
+	body, err := json.Marshal(newNote)
+	assert.NoError(t, err)
+	req, err := http.NewRequest("POST", "/notes/00002", bytes.NewBuffer(body))
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.HandleFunc("/notes/{id}", h.CreateNote).Methods("POST")
+	router.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusCreated, rr.Code)
+	MockStorage.AssertExpectations(t)
 }
