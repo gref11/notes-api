@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"notes-api/internal/models"
+	"notes-api/internal/storage"
 	"testing"
 	"time"
 
@@ -25,6 +26,9 @@ func (m *StorageMock) GetAll() ([]models.Note, error) {
 
 func (m *StorageMock) GetByID(id string) (*models.Note, error) {
 	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
 	return args.Get(0).(*models.Note), args.Error(1)
 }
 
@@ -99,6 +103,24 @@ func TestGetNoteByID(t *testing.T) {
 	mockStorage.AssertExpectations(t)
 }
 
+func TestGetNoteByIDNotFound(t *testing.T) {
+	mockStorage := new(StorageMock)
+	mockStorage.On("GetByID", "00001").Return(nil, storage.ErrNoteNotFound)
+
+	h := NewNotesHandler(mockStorage)
+
+	req, err := http.NewRequest("GET", "/notes/00001", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.HandleFunc("/notes/{id}", h.GetNoteByID).Methods("GET")
+	router.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+	mockStorage.AssertExpectations(t)
+}
+
 func TestCreateNote(t *testing.T) {
 	mockStorage := new(StorageMock)
 	newNote := models.Note{
@@ -152,6 +174,33 @@ func TestUpdateNote(t *testing.T) {
 	mockStorage.AssertExpectations(t)
 }
 
+func TestUpdateNoteNotFound(t *testing.T) {
+	mockStorage := new(StorageMock)
+	updatedNote := models.Note{
+		ID:        "00001",
+		Title:     "Updated note title",
+		Content:   "Updated note content",
+		CreatedAt: time.Date(2025, time.April, 23, 12, 0, 0, 0, time.UTC),
+	}
+	mockStorage.On("Update", "00001", updatedNote).Return(storage.ErrNoteNotFound)
+
+	h := NewNotesHandler(mockStorage)
+
+	body, err := json.Marshal(updatedNote)
+	assert.NoError(t, err)
+
+	req, err := http.NewRequest("PUT", "/notes/00001", bytes.NewBuffer(body))
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.HandleFunc("/notes/{id}", h.UpdateNote).Methods("PUT")
+	router.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+	mockStorage.AssertExpectations(t)
+}
+
 func TestDeleteNote(t *testing.T) {
 	mockStorage := new(StorageMock)
 	mockStorage.On("Delete", "00001").Return(nil)
@@ -167,5 +216,23 @@ func TestDeleteNote(t *testing.T) {
 	router.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusNoContent, rr.Code)
+	mockStorage.AssertExpectations(t)
+}
+
+func TestDeleteNoteNotFound(t *testing.T) {
+	mockStorage := new(StorageMock)
+	mockStorage.On("Delete", "00001").Return(storage.ErrNoteNotFound)
+
+	h := NewNotesHandler(mockStorage)
+
+	req, err := http.NewRequest("DELETE", "/notes/00001", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	router := mux.NewRouter()
+	router.HandleFunc("/notes/{id}", h.DeleteNote).Methods("DELETE")
+	router.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusNotFound, rr.Code)
 	mockStorage.AssertExpectations(t)
 }

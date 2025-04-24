@@ -43,7 +43,6 @@ func (h *NotesHandler) GetNoteByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	note, err := h.storage.GetByID(id)
 	if err != nil {
 		switch {
@@ -61,7 +60,7 @@ func (h *NotesHandler) GetNoteByID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *NotesHandler) CreateNote (w http.ResponseWriter, r *http.Request) {
+func (h *NotesHandler) CreateNote(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
 	vars := mux.Vars(r)
@@ -94,7 +93,7 @@ func (h *NotesHandler) CreateNote (w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-func (h *NotesHandler) UpdateNote (w http.ResponseWriter, r *http.Request) {
+func (h *NotesHandler) UpdateNote(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
 	vars := mux.Vars(r)
@@ -135,7 +134,7 @@ func (h *NotesHandler) UpdateNote (w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *NotesHandler) DeleteNote (w http.ResponseWriter, r *http.Request) {
+func (h *NotesHandler) DeleteNote(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 
 	vars := mux.Vars(r)
